@@ -15,13 +15,13 @@ def load_npy(path, file_name):
     return npy_file
 
 def save_model(model, model_dir):
-
-    save_model = model.module if hasattr(model, 'module') else model  
-    model_file = os.path.join(model_dir, WEIGHTS_NAME)
-    model_config_file = os.path.join(model_dir, CONFIG_NAME)
-    torch.save(save_model.state_dict(), model_file)
-    with open(model_config_file, "w") as f:
-        f.write(save_model.config.to_json_string())
+    if model is not None:
+        save_model = model.module if hasattr(model, 'module') else model
+        model_file = os.path.join(model_dir, WEIGHTS_NAME)
+        model_config_file = os.path.join(model_dir, CONFIG_NAME)
+        torch.save(save_model.state_dict(), model_file)
+        with open(model_config_file, "w") as f:
+            f.write(save_model.config.to_json_string())
 
 def restore_model(model, model_dir):
     output_model_file = os.path.join(model_dir, WEIGHTS_NAME)
@@ -35,11 +35,22 @@ def save_results(args, test_results):
     true_labels_path = os.path.join(args.method_output_dir, 'y_true.npy')
     np.save(true_labels_path, test_results['y_true'])
 
-    del test_results['y_pred']
-    del test_results['y_true']
+    if 'y_true' in test_results.keys():
+        del test_results['y_true']
+    if 'y_pred' in test_results.keys():
+        del test_results['y_pred']
+    if 'y_feat' in test_results.keys():
+        del test_results['y_feat']
 
-    if not os.path.exists(args.result_dir):
-        os.makedirs(args.result_dir)
+    # if not os.path.exists(args.result_dir):
+    #     os.makedirs(args.result_dir)
+    if  '/' in args.results_file_name:
+        result_dir = "/".join(args.results_file_name.split('/')[:-1])
+        if not os.path.exists(result_dir):
+            os.makedirs(result_dir)
+
+    import datetime
+    created_time = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
 
     var = [args.dataset, args.method, args.backbone, args.known_cls_ratio, args.labeled_ratio, args.cluster_num_factor, args.seed]
     names = ['dataset', 'method', 'backbone', 'known_cls_ratio', 'labeled_ratio', 'cluster_num_factor', 'seed']
@@ -47,9 +58,10 @@ def save_results(args, test_results):
     results = dict(test_results,**vars_dict)
     keys = list(results.keys())
     values = list(results.values())
-    
-    results_path = os.path.join(args.result_dir, args.results_file_name)
-    
+
+    # results_path = os.path.join(args.result_dir, args.results_file_name)
+    results_path = args.results_file_name
+
     if not os.path.exists(results_path) or os.path.getsize(results_path) == 0:
         ori = []
         ori.append(values)

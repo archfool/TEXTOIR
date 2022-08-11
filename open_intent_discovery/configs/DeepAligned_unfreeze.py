@@ -26,21 +26,21 @@ class Param():
         """
         hyper_parameters = {
 
-            'bert_model': "bert-base-uncased", # "bert-base-uncased", bert-base-chinese
+            'bert_model': r"D:\data\huggingface\bert-base-chinese", # "bert-base-uncased", bert-base-chinese
             'max_seq_length': None, 
-            'num_pretrain_epochs': 10, #100,
-            'num_train_epochs': 10, #100,
+            'num_pretrain_epochs': 1, #100,
+            'num_train_epochs': 2, #100,
             'num_labels': None,
-            'freeze_bert_parameters': True, #True
+            'freeze_bert_parameters': False, #True
             'feat_dim': 768,
             'warmup_proportion': 0.1,
             'lr_pre': 5e-5,
             'lr': 5e-5, 
             'loss_fct': 'CrossEntropyLoss',
             'activation': 'tanh',
-            'train_batch_size': 128,
-            'eval_batch_size': 64,
-            'test_batch_size': 64,
+            'train_batch_size': 4, # 128
+            'eval_batch_size': 4, # 64
+            'test_batch_size': 4, # 64
             'wait_patient': 3 #20
         }
 

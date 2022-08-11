@@ -13,6 +13,10 @@ class BERT_Loader:
     def __init__(self, args, base_attrs, logger_name = 'Discovery'):
 
         self.logger = logging.getLogger(logger_name)
+        self.get_examples(args, base_attrs)
+        self.get_dataloader(args, base_attrs)
+
+    def get_examples(self, args, base_attrs):
 
         self.train_examples, self.train_labeled_examples, self.train_unlabeled_examples  = get_examples(args, base_attrs, 'train')
         self.logger.info("Number of labeled training samples = %s", str(len(self.train_labeled_examples)))
@@ -23,7 +27,8 @@ class BERT_Loader:
         
         self.test_examples = get_examples(args, base_attrs, 'test')
         self.logger.info("Number of testing samples = %s", str(len(self.test_examples)))
-        
+    def get_dataloader(self, args, base_attrs):
+
         self.train_labeled_loader = get_loader(self.train_labeled_examples, args, base_attrs['known_label_list'], 'train_labeled')
 
         self.train_unlabeled_loader = get_loader(self.train_unlabeled_examples, args, base_attrs['all_label_list'], 'train_unlabeled')
@@ -180,7 +185,7 @@ class DataProcessor(object):
     @classmethod
     def _read_tsv(cls, input_file, quotechar=None):
         """Reads a tab separated value file."""
-        with open(input_file, "r") as f:
+        with open(input_file, "r", encoding='utf-8') as f:
             reader = csv.reader(f, delimiter="\t", quotechar=quotechar)
             lines = []
             for line in reader:

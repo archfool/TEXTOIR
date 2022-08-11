@@ -19,46 +19,46 @@ def parse_arguments():
 
     parser.add_argument('--log_dir', type=str, default='logs', help="Logger directory.")
 
-    parser.add_argument("--dataset", default='banking', type=str, help="The name of the dataset to train selected")
+    parser.add_argument("--dataset", default='data_simple', type=str, help="The name of the dataset to train selected")
 
     parser.add_argument("--known_cls_ratio", default=0.75, type=float, help="The number of known classes")
-    
+
     parser.add_argument("--labeled_ratio", default=0.1, type=float, help="The ratio of labeled samples in the training set")
-    
-    parser.add_argument("--cluster_num_factor", default=1.0, type=float, help="The factor (magnification) of the number of clusters K.")
+
+    parser.add_argument("--cluster_num_factor", default=2.0, type=float, help="The factor (magnification) of the number of clusters K.")
 
     parser.add_argument("--method", type=str, default='DeepAligned', help="which method to use")
 
-    parser.add_argument("--train", action="store_true", help="Whether train the model")
+    parser.add_argument("--train", action="store_true", default=True, help="Whether train the model")
 
-    parser.add_argument("--save_model", action="store_true", help="save trained-model for open intent detection")
+    parser.add_argument("--save_model", action="store_true", default=True, help="save trained-model for open intent detection")
 
     parser.add_argument("--backbone", type=str, default='bert', help="which backbone to use")
 
     parser.add_argument('--setting', type=str, default='semi_supervised', help="Type for clustering methods.")
 
-    parser.add_argument("--config_file_name", type=str, default='DeepAligned.py', help = "The name of the config file.")
+    parser.add_argument("--config_file_name", type=str, default='DeepAligned', help="The name of the config file.")
 
     parser.add_argument('--seed', type=int, default=0, help="random seed for initialization")
 
     parser.add_argument("--gpu_id", type=str, default='0', help="Select the GPU id")
 
     parser.add_argument("--pipe_results_path", type=str, default='pipe_results', help="the path to save results of pipeline methods")
-    
-    parser.add_argument("--data_dir", default = sys.path[0]+'/../data', type=str,
-                        help="The input data dir. Should contain the .csv files (or other data files) for the task.")
 
-    parser.add_argument("--output_dir", default= '/home/sharing/disk2/wx/save_data_162/TEXTOIR/outputs', type=str, 
-                        help="The output directory where all train data will be written.") 
+    parser.add_argument("--data_dir", default='../data', type=str, help="The input data dir. Should contain the .csv files (or other data files) for the task.")
 
-    parser.add_argument("--model_dir", default='models', type=str, 
-                        help="The output directory where the model predictions and checkpoints will be written.") 
+    # parser.add_argument("--output_dir", default= '/home/sharing/disk2/zhanghanlei/save_data_162/TEXTOIR/outputs', type=str,
+    #                     help="The output directory where all train data will be written.")
 
-    parser.add_argument("--result_dir", type=str, default = 'results', help="The path to save results")
+    parser.add_argument("--model_dir", default='data_sample_bert_DeepAligned', type=str, help="The output directory where the model predictions and checkpoints will be written.")
 
-    parser.add_argument("--results_file_name", type=str, default = 'results.csv', help="The file name of all the results.")
+    # parser.add_argument("--result_dir", type=str, default = 'results', help="The path to save results")
 
-    parser.add_argument("--save_results", action="store_true", help="save final results for open intent detection")
+    parser.add_argument("--results_file_name", default='result_banking_DeepAligned.csv', type=str,  help="The file name of all the results.")
+
+    parser.add_argument('--log_file_path', default='log_banking_DeepAlighed.out',  type=str, help="Logger file name.")
+
+    parser.add_argument("--save_results", action="store_true", default=True, help="save final results for open intent detection")
 
     args = parser.parse_args()
 
@@ -66,17 +66,22 @@ def parse_arguments():
 
 
 def set_logger(args):
+    # if not os.path.exists(args.log_dir):
+    #     os.makedirs(args.log_dir)
 
-    if not os.path.exists(args.log_dir):
-        os.makedirs(args.log_dir)
+    if '/' in args.log_file_path:
+        log_dir = "/".join(args.log_file_path.split('/')[:-1])
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir)
 
-    time = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
-    file_name = f"{args.method}_{args.dataset}_{args.backbone}_{args.known_cls_ratio}_{args.labeled_ratio}_{time}.log"
-    
+    # time = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+    # file_name = f"{args.method}_{args.dataset}_{args.backbone}_{args.known_cls_ratio}_{args.labeled_ratio}_{time}.log"
+
     logger = logging.getLogger(args.logger_name)
     logger.setLevel(logging.DEBUG)
 
-    fh = logging.FileHandler(os.path.join(args.log_dir, file_name))
+    # fh = logging.FileHandler(os.path.join(args.log_dir, file_name))
+    fh = logging.FileHandler(args.log_file_path)
     fh_formatter = logging.Formatter('%(asctime)s - %(name)s - %(message)s')
     fh.setFormatter(fh_formatter)
     fh.setLevel(logging.DEBUG)
@@ -90,13 +95,13 @@ def set_logger(args):
 
     return logger
 
+
 def run(args, data, model, logger):
 
     method_manager = method_map[args.method]
-    method = method_manager(args, data, model, logger_name = args.logger_name)
-    
+    method = method_manager(args, data, model, logger_name=args.logger_name)
+
     if args.train:
-        
         logger.info('Training Begin...')
         method.train(args, data)
         logger.info('Training Finished...')
@@ -106,31 +111,45 @@ def run(args, data, model, logger):
     logger.info('Testing finished...')
 
     if args.save_results:
-        logger.info('Results saved in %s', str(os.path.join(args.result_dir, args.results_file_name)))
+        logger.info('Results saved in %s', str(args.results_file_name))
         save_results(args, outputs)
+
+def get_parameter_number(model):
+    total_num = sum(p.numel() for p in model.parameters())
+    trainable_num = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    return {'Total parameters': total_num, 'Trainable parameters': trainable_num}
+
+    # if args.save_frontend_results:
+    #     logger.info('Save frontend results start...')
+    #     save_evaluation_results(args, data, outputs)
+    #     save_test_results(args, outputs)
+    #     save_centroid_analysis(args, data, outputs)
+    #     save_analysis_table_results(args, data, outputs, logger_name=args.logger_name)
+    #
+    #     logger.info('Save frontend results finished...')
 
 
 if __name__ == '__main__':
-    
-    sys.path.append('.')
+
+    # sys.path.append('.')
     args = parse_arguments()
     logger = set_logger(args)
-    
+
     logger.info('Open Intent Discovery Begin...')
     logger.info('Parameters Initialization...')
     param = ParamManager(args)
     args = param.args
 
-    logger.debug("="*30+" Params "+"="*30)
+    logger.debug("=" * 30 + " Params " + "=" * 30)
     for k in args.keys():
         logger.debug(f"{k}:\t{args[k]}")
-    logger.debug("="*30+" End Params "+"="*30)
+    logger.debug("=" * 30 + " End Params " + "=" * 30)
 
     logger.info('Data and Model Preparation...')
     data = DataManager(args)
     model = ModelManager(args, data)
 
+    logger.info(get_parameter_number(model.model))
+
     run(args, data, model, logger)
     logger.info('Open Intent Discovery Finished...')
-    
-

@@ -39,7 +39,7 @@ class PretrainDeepAlignedManager:
         for epoch in trange(int(args.num_pretrain_epochs), desc="Epoch"):
             
             self.model.train()
-            tr_loss = 0
+            # tr_loss = 0
             nb_tr_examples, nb_tr_steps = 0, 0
             
             for step, batch in enumerate(tqdm(self.train_dataloader, desc="Iteration")):
@@ -50,15 +50,20 @@ class PretrainDeepAlignedManager:
                     loss = self.model(input_ids, segment_ids, input_mask, label_ids, mode = "train", loss_fct = self.loss_fct)
                     
                     loss.backward()
-                    tr_loss += loss.item()
+                    # tr_loss += loss.item()
                     nb_tr_examples += input_ids.size(0)
                     nb_tr_steps += 1
 
                     self.optimizer.step()
                     self.optimizer.zero_grad()
             
-            loss = tr_loss / nb_tr_steps
-            
+            # loss = tr_loss / nb_tr_steps
+
+            # 释放显存，优化显存占用
+            self.model.zero_grad(set_to_none=True)
+            # self.optimizer.zero_grad(set_to_none=True)
+            torch.cuda.empty_cache()
+
             y_true, y_pred = self.get_outputs(args, mode = 'eval')
             eval_score = round(accuracy_score(y_true, y_pred) * 100, 2)
 
@@ -83,10 +88,12 @@ class PretrainDeepAlignedManager:
                 if wait >= args.wait_patient:
                     break
                 
-        self.model = best_model
+        self.model = self.model if best_model is None else best_model
 
-        if args.save_model:
+        if args.save_model and self.model is not None:
             pretrained_model_dir = os.path.join(args.method_output_dir, 'pretrain')
+            self.logger.info("Pretrained model saved to %s", pretrained_model_dir)
+            
             if not os.path.exists(pretrained_model_dir):
                 os.makedirs(pretrained_model_dir)
             save_model(self.model, pretrained_model_dir)

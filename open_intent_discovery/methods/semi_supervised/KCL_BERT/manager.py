@@ -64,6 +64,7 @@ class KCLManager:
                 input_ids, input_mask, segment_ids, label_ids = batch
                 
                 simi = self.prepare_task_target(batch, self.pretrained_model)
+
                 loss = self.model(input_ids, segment_ids, input_mask, label_ids, mode = 'train', simi = simi, loss_fct = self.loss_fct)
                 
                 loss.backward()
@@ -101,8 +102,10 @@ class KCLManager:
                 wait += 1
                 if wait >= args.wait_patient:
                     break
-
-        self.model = best_model
+        if best_model is not None:
+            self.model = best_model
+        else:
+            print("Warning: best model is None")
 
         if args.save_model:
             save_model(self.model, args.model_output_dir)

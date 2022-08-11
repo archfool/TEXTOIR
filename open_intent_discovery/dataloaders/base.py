@@ -32,6 +32,7 @@ class DataManager:
 
         args.num_labels = self.num_labels = int(len(self.all_label_list) * args.cluster_num_factor)
 
+
         self.dataloader = self.get_loader(args, self.get_attrs())
 
                 

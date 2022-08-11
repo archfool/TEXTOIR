@@ -26,22 +26,22 @@ class Param():
         """
         hyper_parameters = {
 
-            'bert_model': "/home/sharing/disk1/pretrained_embedding/bert/uncased_L-12_H-768_A-12/",
+            'bert_model': "bert-base-uncased",
             'num_labels': None,
-            'num_train_epochs': 46,
-            'num_refine_epochs': 100,
+            'num_train_epochs': 10, #46,
+            'num_refine_epochs': 10, #100,
             'max_seq_length': None, 
-            'freeze_bert_parameters': True,
+            'freeze_bert_parameters': True, # True,
             'feat_dim': 768,
             'warmup_proportion': 0.1,
             'lr': 5e-5, 
             'activation': 'tanh',
             'u': 0.95,
             'l': 0.455,
-            'train_batch_size': 256,
+            'train_batch_size': 128, #256,
             'eval_batch_size': 64,
             'test_batch_size': 64,
-            'wait_patient': 5
+            'wait_patient': 3  #5
         }
 
         return hyper_parameters
